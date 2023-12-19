@@ -20,7 +20,7 @@ client.on("backoff", (retry, delay) =>
 async.series(
     [   // step 1 : collect data from file
         function (callback) {
-            fs.readFile(`./db.json`, "utf-8", (error, data) => {
+            fs.readFile(`./public/db.json`, "utf-8", (error, data) => {
                 if(!error) {
                     tagData = JSON.parse(data);
                     tagData = formatTags(tagData);
