@@ -1,5 +1,5 @@
 const http = require('http');
-const client = require("./client.js");
+const client = require("./opc-ua-client.js");
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
