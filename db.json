@@ -1,0 +1,27 @@
+[
+    {
+        "name" : "Shop_Test_10",
+        "description" : "Shop Testing Bit 10"
+    },
+    {
+        "name" : "FAST_PULSE",
+        "description" : "Fast Pulse"
+    },
+    {
+        "name" : "'MIX_MTR'.DRIVE.RPM.SCREW_SP",
+        "description" : "Mixer Motor Maximum Speed (rpm)"
+    },
+    {
+        "name" : "'MIX_MTR'.DRIVE.RPM.SCREW_SP",
+        "description" : "Mixer Rotor Speed Setpoint (rpm)"
+    },
+    {
+        "name" : "'MIX_MTR'.DRIVE.RPM.MTR_SP",
+        "description" : "Mixer Motor Speed Setpoint (rpm)"
+    },
+    {
+        "name" : "'DATE_TIME'.READ.TIME.SEC",
+        "description" : "Seconds of Minute (s)"
+    }
+    
+]
