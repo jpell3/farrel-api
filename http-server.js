@@ -1,14 +1,27 @@
-const http = require('http');
-const client = require("./opc-ua-client.js");
+import HTTP from 'http';
+
 const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-    res.writeHead(200, { "Content-Type" : 'text/html'})
-    res.end("Welcome to the NodeJS server.");
-});
+export default async function createServer() {
+  return new Promise((resolve, reject) => {
+    const server = HTTP.createServer((req, res) => {
+      res.writeHead(200, { "Content-Type" : 'text/html'})
+      res.end("Welcome to the NodeJS server.");
+    })
+    
+    server.listen(PORT, (err) => {
+      let message;
 
-server.listen(PORT, (error) => {
-    !error ? message = 'successfully started' : message = 'failed to start'
-    console.log(`Node server ${message} on port ${PORT}`);
-    !error ? console.log(`http://localhost:${PORT}`) : '';
-});
+      if(err) {
+        message = 'failed to start'
+        console.log(`Node server ${message} on port ${PORT}`);
+        reject(err);
+      } else {
+        message = 'successfully started'
+        console.log(`Node server ${message} on port ${PORT}`);
+        console.log(`http://localhost:${PORT}`)
+        resolve();
+      }
+    });
+  });
+}

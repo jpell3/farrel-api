@@ -1,6 +1,5 @@
 import { clearInterval } from "timers";
-
-const { OPCUAClient, AttributeIds } = require("node-opcua");
+import { OPCUAClient, AttributeIds } from "node-opcua";
 
 // define and initialize variables
 const serverURL = 'opc.tcp://10.0.0.10:4840';
@@ -26,7 +25,7 @@ export async function readTags(_fs, path) {
   console.log(`LOG:  Fetching data from tag file...`);
   return new Promise((resolve, reject) => {
     _fs.readFile(path, 'utf-8', (err, data) => {
-      !err ? resolve(JSON.parse(data)) : reject(err);
+      !err ? resolve(data) : reject(err);
     });
   });
 };

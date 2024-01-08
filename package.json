@@ -2,10 +2,10 @@
   "name": "farrel-api",
   "version": "1.0.0",
   "description": "Simple proof of concept to pull data from a Farrel PLC",
+  "type" : "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon http-server.js",
+    "dev": "nodemon index.js",
     "client": "nodemon opc-ua-client.js"
   },
   "keywords": [],
