@@ -14,12 +14,12 @@ export default async function createServer() {
 
       if(err) {
         message = 'failed to start'
-        console.log(`Node server ${message} on port ${PORT}`);
+        console.log(`\nNode server ${message} on port ${PORT}`);
         reject(err);
       } else {
         message = 'successfully started'
-        console.log(`Node server ${message} on port ${PORT}`);
-        console.log(`http://localhost:${PORT}`)
+        console.log(`\nNode server ${message} on port ${PORT}`);
+        console.log(`http://localhost:${PORT}\n`)
         resolve();
       }
     });

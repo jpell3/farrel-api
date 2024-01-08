@@ -7,6 +7,8 @@ Our customers are growingly more interested in their data. As it stands, methods
 - [x] Locate and implement the Node.js OPC UA package
 - [x] Establish an OPC UA connection to a Siemens PLC
 - [x] Read live data from the OPC UA server
+- [x] Refactor code to utilize Promises/.then instead of callbacks
+- [ ] Handle connection sequencing and backoff events
 - [ ] ...future milestones to be added as the project progresses
 
 ## Configured Scripts
