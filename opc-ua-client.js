@@ -1,10 +1,9 @@
-const { OPCUAClient, AttributeIds, resolveNodeId, TimestampsToReturn } = require("node-opcua");
-const async = require("async");
-const fs = require('fs');
+import { clearInterval } from "timers";
+
+const { OPCUAClient, AttributeIds } = require("node-opcua");
 
 // define and initialize variables
 const serverURL = 'opc.tcp://10.0.0.10:4840';
-let the_session, the_subscription, tagData, error;
 
 // create client
 const client = OPCUAClient.create({
@@ -23,149 +22,71 @@ client.on("backoff", (retry, delay) => {
 	console.log(`Unable to connect to ${serverURL}...next attempt (#${retry + 1}) in ${delay/1000} seconds...`);
 });
 
+export async function readTags(_fs, path) {
+  console.log(`LOG:  Fetching data from tag file...`);
+  return new Promise((resolve, reject) => {
+    _fs.readFile(path, 'utf-8', (err, data) => {
+      !err ? resolve(JSON.parse(data)) : reject(err);
+    });
+  });
+};
 
-// run async functions in sequence
-async.series(
-	[
-		// step 1 : collect data from file
-		function (callback) {
-			fs.readFile(`./public/db.json`, "utf-8", (error, data) => {
-				if(!error) {
-					tagData = JSON.parse(data);
-					tagData = formatTags(tagData);
-				} else {
-					console.log(error);
-				}
-			});
-			callback();
-		},
+export async function connectToServer(_client, _sURI) {
+  console.log(`LOG:  Attempting to establish server connection to OPCUA server...`);
+  return new Promise((resolve, reject) => {
+    const connection = _client.connect(_sURI, (err) => {
+      !err ? message = `successfully connected` : message = `failed to connect`;
+      console.log(`LOG:  Client ${message} to ${_sURI}`);
+      !err ? resolve(connection) : reject(err);
+    });
+  });
+}
 
-		// step 2 : connect to server
-		function (callback) {
-			console.log(`\nAttempting to connect to OPCUA server...`);
-			client.connect(serverURL, (error) => {
-				let message;
-				error ? message = `failed to connect` : message = `successfully connected`
-				console.log(`Client ${message} to ${serverURL}`);
-				callback(error);
-			});
-		},
+export async function startSession(_client) {
+  console.log(`LOG:   Starting server session...`);
+  return new Promise((resolve, reject) => {
+    _client.createSession((err, _session) => {
+      if(err) { reject(err) }
+      console.log(`LOG:  Server session successfully created...`);
+      resolve(_session);
+    });
+  });
+}
 
-		// step 3 : open a server session
-		function (callback) {
-			console.log(`\nAttempting to create session...`);
-			client.createSession((error, session) => {
-				if (error) { return callback(error) }
-				the_session = session;
-				console.log(`Session successfully created...`);
-				callback();
-			});
-		},
+export async function readData(_session, dataArr, timeInterval) {
+  console.log(`LOG:  Reading data at ${timeInterval/1000}s intervals...`);
+  return new Promise((resolve, reject) => {
+    let readData = setInterval(() => {
+      dataArr.forEach((tag) => {
+        _session.read({ nodeId: `NodeId ns=3;s=${tag.name}`, attributeId: AttributeIds.Value }, (err, dataValue) => {
+          if(err) {
+            clearInterval(readData);
+            reject(err);
+          } else {
+            tag.value = dataValue.value.value;
+            console.log(`LOG:  Advised ${tag.name} of value ${tag.value}`);
+          }
+        })
+      });
+    }, timeInterval);
+    resolve(readData);
+  });
+}
 
-		// step 4 : read data continuously
-		function (callback) {
-			let readData = setInterval(() => {
-				tagData.forEach((tag) => {
-					the_session.read({ nodeId: `NodeId ns=3;s=${tag.name}`, attributeId: AttributeIds.Value }, (err, dataValue) => {
-						if (!err) {
-							// console.log(`${tag.description} = ${dataValue.value.value}`);
-							tag.value = dataValue.value.value;
-						} else {
-							// console.log(err);
-							clearInterval(readData);
-						}
-						error = err;
-					});
-				});
-				// console.log(tagData);
-
-			}, 1000);
-			callback(error);
-		},
-
-		// step 5: install a subscription and install a monitored item for 10 seconds
-		function (callback) {
-			const subscriptionOptions = {
-				// maxNotificationsPerPublish: 1000,
-				// publishingEnabled: true,
-				// requestedLifetimeCount: 100,
-				// requestedMaxKeepAliveCount: 20,
-				// requestedPublishingInterval: 1000
-			};
-			the_session.createSubscription2(subscriptionOptions, (err, subscription) => {
-				if (err) { return callback(err); }
-
-				the_subscription = subscription;
-
-				the_subscription
-					.on("started", () => {
-						console.log("subscription started for 2 seconds - subscriptionId=", the_subscription.subscriptionId);
-					})
-					.on("keepalive", () => {
-						console.log("Subscription -> keepalive");
-					})
-					.on("terminated", () => {
-						console.log("Subscription Terminated");
-					});
-				callback();
-			});
-		},
-
-		// install monitored item
-		function (callback) {
-			const itemToMonitor = {
-				nodeId: resolveNodeId('ns=3;s="SLOW_PULSE"'),
-				attributeId: AttributeIds.Value
-			};
-			const monitoringParamaters = {
-				samplingInterval: 100,
-				discardOldest: true,
-				queueSize: 10
-			};
-
-			the_subscription.monitor(itemToMonitor, monitoringParamaters, TimestampsToReturn.Both, (err, monitoredItem) => {
-				monitoredItem.on("changed", (dataValue) => {
-					console.log("monitored item changed:  % free mem = ", dataValue.value.value);
-				});
-				callback();
-			});
-			console.log("-------------------------------------");
-		},
-
-		// wait a little bit : 5 minutes
-		function (callback) {
-			setTimeout(() => callback(), 300 * 1000);
-		},
-
-		// terminate session
-		function (callback) {
-			the_subscription.terminate(callback);
-		},
-
-		// close session
-		function (callback) {
-			the_session.close(function (err) {
-				if (err) {
-					console.log("Failed to close session...");
-				}
-				callback();
-			});
-		}
-	],
-
-	function (err) {
-		if (err) {
-			console.log(" failure ", err);
-		} else {
-			console.log("done!");
-		}
-		client.disconnect(function () {});
-	}
-);
+export async function closeConnection(_client , _session, _readData, err) {
+  if (err) {
+    console.log(`LOG:  Closing connection due to error...`, err);
+  } else {
+    console.log(`LOG:  Closing connection normally...`);
+  }
+  clearInterval(_readData);
+  _session.close((err) => { err ? console.log(err) : '' });
+  _client.disconnect((err) => { err ? console.log(err) : '' });
+}
 
 // convert PLC tag format to OPCUA tag format
 // i.e   MIX_MTR.DRIVE.STA.RUN => "MIX_MTR"."DRIVE"."STA"."RUN"
-function formatTags(tagArr) {
+export function formatTags(tagArr) {
 	const regex1 = /\'/g;
 	const regex2 = /\./g;
 	let tempString;
@@ -175,16 +96,3 @@ function formatTags(tagArr) {
 	});
 	return tagArr;
 }
-
-// attempting to make this data readable in http-server.js as proof of concept
-let me = [{
-	"name" : "justin",
-	"age" : 27,
-}]
-
-// attempting the same as above, thought maybe I was writing before the variables were defined
-// setTimeout(() => {
-// 		console.log(tagData);
-// 		module.exports = {me};
-// }, 2000);
-
