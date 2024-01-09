@@ -2,6 +2,9 @@ import HTTP from 'http';
 
 const PORT = process.env.PORT || 3000;
 
+// create timestamp object for logging
+let timestamp = new Date().toLocaleTimeString();
+
 export default async function createServer() {
   return new Promise((resolve, reject) => {
     const server = HTTP.createServer((req, res) => {
@@ -14,12 +17,11 @@ export default async function createServer() {
 
       if(err) {
         message = 'failed to start'
-        console.log(`\nNode server ${message} on port ${PORT}`);
+        console.log(`${timestamp}  |  LOG:  Node server ${message} on port ${PORT}`);
         reject(err);
       } else {
         message = 'successfully started'
-        console.log(`\nNode server ${message} on port ${PORT}`);
-        console.log(`http://localhost:${PORT}\n`)
+        console.log(`${timestamp}  |  LOG:  Node server ${message} on port ${PORT} -> http://localhost:${PORT}`);
         resolve();
       }
     });

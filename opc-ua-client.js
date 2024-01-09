@@ -1,28 +1,33 @@
 import { clearInterval } from "timers";
 import { AttributeIds } from "node-opcua";
 
+// create timestamp object for logging
+export let timestamp = new Date().toLocaleTimeString();
+
+// update timestamp
+setInterval(() => {
+  timestamp = new Date().toLocaleTimeString();
+}, 1000);
+
 // read tag array from db.json
 export async function readTags(_fs, path) {
-  console.log(`LOG:  Fetching data from tag file...`);
+  console.log(`${timestamp}  |  LOG:  Fetching data from tag file...`);
   return new Promise((resolve, reject) => {
     _fs.readFile(path, 'utf-8', (err, data) => {
       if(err) { reject(err) }
-      data = JSON.parse(data);
-      data = formatTags(data);
-      resolve(data);
+      resolve(formatTags(JSON.parse(data)));
     });
   });
 };
 
 // create connection to OPCUA server
 export async function connectToServer(_client, _sURI) {
-  console.log(`LOG:  Attempting to establish server connection to OPCUA server...`);
+  console.log(`${timestamp}  |  LOG:  Attempting to establish server connection to OPCUA server...`);
   return new Promise((resolve, reject) => {
     let message;
     _client.connect(_sURI, (err) => {
       !err ? message = `successfully connected` : message = `failed to connect`;
-      console.log(`LOG:  Client ${message} to ${_sURI}`);
-      // console.log(_client);
+      console.log(`${timestamp}  |  LOG:  Client ${message} to ${_sURI}`);
       !err ? resolve(_client) : reject(err);
     });
   });
@@ -30,29 +35,29 @@ export async function connectToServer(_client, _sURI) {
 
 // open OPCUA server session
 export async function startSession(_client) {
-  console.log(`LOG:  Attempting to start server session...`);
+  console.log(`${timestamp}  |  LOG:  Attempting to start server session...`);
   return new Promise((resolve, reject) => {
     _client.createSession((err, _session) => {
       if(err) { reject(err) }
-      console.log(`LOG:  Server session successfully created`);
+      console.log(`${timestamp}  |  LOG:  Server session successfully created`);
       resolve(_session);
     });
   });
 }
 
 // read data
-export async function readData(_session, dataArr, timeInterval) {
-  console.log(`LOG:  Reading data at ${timeInterval/1000}s intervals...`);
+export async function readData(_session, dataArr, timeInterval, readEnable) {
+  console.log(`${timestamp}  |  LOG:  Reading data at ${timeInterval/1000}s intervals...`);
   return new Promise((resolve, reject) => {
     let readData = setInterval(() => {
       dataArr.forEach((tag) => {
         _session.read({ nodeId: `NodeId ns=3;s=${tag.name}`, attributeId: AttributeIds.Value }, (err, dataValue) => {
-          if(err) {
+          if(err || !readEnable) {
             clearInterval(readData);
             reject(err);
           } else {
             tag.value = dataValue.value.value;
-            console.log(`LOG:  Advised ${tag.name} of value ${tag.value}`);
+            console.log(`${timestamp}  |  LOG:  Advised item [${tag.name}] of value [${tag.value}]`);
           }
         })
       });
@@ -62,13 +67,12 @@ export async function readData(_session, dataArr, timeInterval) {
 }
 
 // close connection
-export async function closeConnection(_client , _session, _readData, err) {
+export async function closeConnection(_client , _session, err) {
   if (err) {
-    console.log(`LOG:  Closing connection due to error...`, err);
+    console.log(`${timestamp}  |  LOG:  Closing connection due to error:  `, err);
   } else {
-    console.log(`LOG:  Closing connection normally...`);
+    console.log(`${timestamp}  |  LOG:  Closing connection normally...`);
   }
-  clearInterval(_readData);
   _session.close((err) => { err ? console.log(err) : '' });
   _client.disconnect((err) => { err ? console.log(err) : '' });
 }

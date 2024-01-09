@@ -2,7 +2,7 @@
   "name": "farrel-api",
   "version": "1.0.0",
   "description": "Simple proof of concept to pull data from a Farrel PLC",
-  "type" : "module",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon index.js",
