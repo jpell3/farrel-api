@@ -1,5 +1,10 @@
 [
     {
+        "name" : "OperatingMode",
+        "description" : "PLC Operating Mode",
+        "systemTag" : true
+    },
+    {
         "name" : "Shop_Test_10",
         "description" : "Shop Testing Bit 10"
     },
@@ -22,6 +27,5 @@
     {
         "name" : "'DATE_TIME'.READ.TIME.SEC",
         "description" : "Seconds of Minute (s)"
-    }
-    
+    }    
 ]

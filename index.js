@@ -5,7 +5,7 @@ import { progStatus } from './status.js';
 import fs from 'fs';
 
 // define and initialize variables
-export const serverURI = 'opc.tcp://10.0.0.10:4840'
+const serverURI = 'opc.tcp://10.0.0.10:4840'
 let tagArray, connection, session;
 let readEnable = true;
 

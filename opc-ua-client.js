@@ -22,7 +22,7 @@ export async function readTags(_fs, path) {
 
 // create connection to OPCUA server
 export async function connectToServer(_client, _sURI) {
-  console.log(`${timestamp}  |  LOG:  Attempting to establish server connection to OPCUA server...`);
+  console.log(`${timestamp}  |  LOG:  Attempting to establish server connection to ${_sURI}...`);
   return new Promise((resolve, reject) => {
     let message;
     _client.connect(_sURI, (err) => {
@@ -77,15 +77,16 @@ export async function closeConnection(_client , _session, err) {
   _client.disconnect((err) => { err ? console.log(err) : '' });
 }
 
-// convert PLC tag format to OPCUA tag format
-// i.e   MIX_MTR.DRIVE.STA.RUN => "MIX_MTR"."DRIVE"."STA"."RUN"
+// convert PLC tag format to OPCUA tag format, ignores system tags
+// i.e   'MIX_MTR'.DRIVE.STA.RUN => "MIX_MTR"."DRIVE"."STA"."RUN"
+// i.e   OperatingMode => OperatingMode
 function formatTags(tagArr) {
 	const regex1 = /\'/g;
 	const regex2 = /\./g;
 	let tempString;
 	tagArr.forEach(item => {
 			tempString = item.name.replace(regex1, '').replace(regex2, "\".\"");
-			item.name = `\"${tempString}\"`;
+			item.systemTag ? item.name = tempString : item.name = `\"${tempString}\"`;
 	});
 	return tagArr;
 }

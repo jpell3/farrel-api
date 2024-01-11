@@ -1,4 +1,4 @@
-import { client, serverURI } from './index.js' 
+import { client } from './index.js' 
 
 // create timestamp object for logging
 let timestamp = new Date().toLocaleTimeString();
@@ -65,14 +65,29 @@ setTimeout(() => {
     client.on("connected", () => {
       clientStarted();
       progStatus.client.startTime = Date.now();
-      console.log(`${timestamp}  |  EVENT:  Connected to client.`);
+      console.log(`${timestamp}  |  LOG:  Connected to client.`);
     });
 
     client.on("backoff", (count, delay) => {
-      console.log(`${timestamp}  |  LOG:  Unable to connect to ${serverURI}...next attempt (#${count + 1}) in ${Math.floor(delay/1000)} seconds...`);
-      if(count + 1 >= 3) {
-        console.log(`${timestamp}  |  LOG:  Failed to connect to ${serverURI}. Check the connection and try again.`);
-        console.log(`${timestamp}  |  EVENT:  Program terminated. Total Uptime: ${progStatus.program.uptime.toString}`);
+      const error = client._secureChannel.lastError;
+      
+      // print informative error
+      switch(error.code) {
+        //ETIMEDOUT - no connection to server
+        //ECONNREFUSED - server disabled or configuration error
+        case 'ETIMEDOUT':
+          console.log(`${timestamp}  |  ERROR:  Unable to connect to server [${error.code}]. Attempt #${count+1} in ${Math.floor(delay/1000)}s.`);
+          break;
+        case 'ECONNREFUSED':
+          console.log(`${timestamp}  |  ERROR:  Connection Refused [${error.code}]. Attempt #${count+1} in ${Math.floor(delay/1000)}s.`);
+          break;
+        default:
+          console.log(`${timestamp}  |  ERROR:  General Error. Contact Support. Attempt #${count+1} in ${Math.floor(delay/1000)}s.`);
+      };
+
+      // allow 5 attempts to reconnect
+      if(count+1 >= 5) {
+        console.log(`${timestamp}  |  LOG:  Program terminated in error. Total Uptime: ${progStatus.program.uptime.toString}`);
         process.exit();
       }
     });
@@ -80,18 +95,22 @@ setTimeout(() => {
     client.on("connection_lost", () => {
       clearInterval(clientActive);
       progStatus.client.endTime = Date.now();
-      console.log(`${timestamp}  |  EVENT:  Connection lost to client. Total Uptime: ${progStatus.client.uptime.toString}`);
+      console.log(`${timestamp}  |  ERROR:  Connection lost to client. Total Uptime: ${progStatus.client.uptime.toString}`);
     });
 
     client.on("start_reconnection", () => {
-      console.log(`${timestamp}  |  EVENT:  Attempting to reconnect...`);
+      console.log(`${timestamp}  |  LOG:  Attempting to reconnect...`);
     });
 
     client.on("connection_reestablished", () => {
       clientStarted();
       progStatus.client.startTime = Date.now();
-      console.log(`${timestamp}  |  EVENT:  Connection Reestablished to client`);
+      console.log(`${timestamp}  |  LOG:  Connection Reestablished to client`);
     });
+
+    // setInterval(() => {
+    //   console.log(client);
+    // }, 5000);
     
 }, 250);
 
